@@ -1,71 +1,81 @@
-#include "stdio.h"
-#include <dirent.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <pwd.h>
-#include <time.h>
-#include <grp.h>
-#include "libft/libft.h"
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: opanchen <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2018/02/23 14:34:55 by opanchen          #+#    #+#             */
+/*   Updated: 2018/02/23 14:36:38 by opanchen         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-int main(void)
+#include "ls.h"
+
+int		main(int ac, char **ar)
 {
-	DIR *p_dir;
-	struct dirent *dir;
-	int a;
-	struct stat buf;
-	int i;
-	struct passwd *pass;
-	struct group *group;
+	t_dir			*ddir;
+	struct s_flags	t_fla;
 
+	ddir = NULL;
+	flags(ac, ar, &t_fla);
+	if (open_folder(&ddir) == -1)
+		return (0);
+	print_struct(ddir);
+	free_struct(ddir);
+}
 
-	i =0;
+int		open_folder(t_dir **ddir)
+{
+	DIR				*p_dir;
+	struct dirent	*dir;
+
 	p_dir = opendir(".");
 	if (p_dir == NULL)
 	{
 		printf("Can't open dir!\n");
-		return(0);
+		return (-1);
 	}
 	while ((dir = readdir(p_dir)) != NULL)
+		*ddir = new_item(dir, *ddir);
+	closedir(p_dir);
+	return (0);
+}
+
+t_dir	*new_item(struct dirent *dir, t_dir *ddir)
+{
+	struct stat	buf;
+	t_dir		*tmp;
+
+	tmp = malloc(sizeof(t_dir));
+	if (tmp)
 	{
-		if ((a = stat(dir->d_name, &buf)) <  0)
+		if (stat(dir->d_name, &buf) < 0)
 		{
 			printf("stat == 0\n");
 			return (0);
 		}
-	printf( (S_ISDIR(buf.st_mode)) ? "d" : "-");
-    printf( (buf.st_mode & S_IRUSR) ? "r" : "-");
-    printf( (buf.st_mode & S_IWUSR) ? "w" : "-");
-    printf( (buf.st_mode & S_IXUSR) ? "x" : "-");
-    printf( (buf.st_mode & S_IRGRP) ? "r" : "-");
-    printf( (buf.st_mode & S_IWGRP) ? "w" : "-");
-    printf( (buf.st_mode & S_IXGRP) ? "x" : "-");
-    printf( (buf.st_mode & S_IROTH) ? "r" : "-");
-    printf( (buf.st_mode & S_IWOTH) ? "w" : "-");
-    printf( (buf.st_mode & S_IXOTH) ? "x" : "-");
-    printf("%4d",buf.st_nlink);
-	pass = getpwuid(buf.st_uid);
-	group = getgrgid(buf.st_gid);
-	printf(" %s", pass->pw_name);
-	printf("  %s", group->gr_name);
-	printf("%10lld",  buf.st_size);
-	char *s;
-	s = ft_strnew(50);
-	int j;
-	j = 0;
-	char *t;
-	t = ft_strnew(50);
-	ft_strncpy(s, ctime(&buf.st_mtime), 16);
-	while (j != (int)ft_strlen(s) + 4)
+		rwx(buf, tmp);
+		am_pass(buf, tmp);
+		ls_time(buf, tmp, dir);
+		tmp->next = ddir;
+	}
+	return (tmp);
+}
+
+void	free_struct(t_dir *ddir)
+{
+	t_dir *fr;
+
+	while (ddir != NULL)
 	{
-		t[j] = s[j + 4];
-		j++;
+		free(ddir->rwx);
+		free(ddir->time);
+		free(ddir->name);
+		free(ddir->u_name);
+		free(ddir->g_name);
+		fr = ddir->next;
+		free(ddir);
+		ddir = fr;
 	}
-	free(s);
-	printf("  %s", t);
-	printf("  %s\n", dir->d_name);
-	free(t);
-		i++;
-	}
-	closedir(p_dir);
 }

@@ -1,16 +1,21 @@
 NAME = ft_ls
 
 SRC = main.c \
+	  flags.c \
+	  rwx.c \
+	  time.c \
+	  admin_folder.c \
+	  print.c
 
 OBJ = $(SRC:.c=.o)
 CFLAGS = -Wall -Wextra -Werror 
 
 all: $(NAME)
 
-$(NAME): libft/libft.a $(OBJ)
+$(NAME): libft/libft.a $(OBJ) ls.h
 	gcc $(OBJ) libft/libft.a -I libft -o $(NAME) $(GFLAGS)
 
-%.o: %.c get_next_line/get_next_line.h
+%.o: %.c ls.h
 	gcc $(CFLAGS) -c -o $@ $<
 
 clean:
